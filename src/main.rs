@@ -4,9 +4,10 @@ use blocks::{Direction, Block, RedstoneDust, RedstoneBlock, Repeater, Iron, Air}
 use assets::Assets;
 use ggez::{
     Context, GameResult, event, graphics, timer,
-    graphics::DrawParam,
+    //graphics::DrawParam,
     event::KeyCode,
     input::mouse::MouseButton,
+    audio::SoundSource,
 };
 
 
@@ -41,7 +42,7 @@ fn from_idx(idx: usize) -> (u32, u32) {
     (idx as u32 % CW, idx as u32 / CW)
 }
 
-fn from_cords(x: u32, y: u32) -> usize {
+fn _from_cords(x: u32, y: u32) -> usize {
     (y * CW + x) as usize
 }
 
@@ -185,8 +186,12 @@ impl event::EventHandler for GameState {
             if self.mouse.left {
                 if let Some(block) = self.world.get_mut(
                     // y * width + x
-                    (self.mouse.y as u32 / CELL * CW + self.mouse.x as u32 / CELL) as usize) {
-                    *block = self.player.current.clone();
+                    (self.mouse.y as u32 / CELL * CW + self.mouse.x as u32 / CELL) as usize
+                    ) {
+                    if *block != self.player.current {
+                        *block = self.player.current.clone();
+                        let _ = self.assets.block_sound.play();
+                    }
                 }
             }
 

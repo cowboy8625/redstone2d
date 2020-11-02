@@ -1,4 +1,5 @@
 use ggez::graphics::Image;
+use ggez::audio;
 use crate::Context;
 use crate::GameResult;
 use crate::CELL;
@@ -10,6 +11,10 @@ fn get_sprite(name: &str) -> String {
     format!("/sprites/{}.png", name)
 }
 
+fn get_sound(name: &str) -> String {
+    format!("/sounds/{}.ogg", name)
+}
+
 pub struct Assets {
     pub iron: Image,
     pub air: Image,
@@ -17,6 +22,7 @@ pub struct Assets {
     pub redstone_block: Image,
     repeater: Image,
     repeater_on: Image,
+    pub block_sound: audio::Source,
 }
 
 impl Assets {
@@ -27,8 +33,11 @@ impl Assets {
         let redstone_dust = Image::solid(ctx, CELL as u16, (0, 0, 0, 0).into())?;
         let repeater = Image::new(ctx, &get_sprite("repeater"))?;
         let repeater_on = Image::new(ctx, &get_sprite("repeater_on"))?;
+
+        let block_sound = audio::Source::new(ctx, &get_sound("stone1"))?;
         Ok( Self {
             iron, air, redstone_block, redstone_dust, repeater, repeater_on,
+            block_sound,
         })
     }
 

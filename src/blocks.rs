@@ -19,7 +19,7 @@ impl Direction {
         }
     }
 
-    pub fn is_oposite(&self, dir: &Direction) -> bool {
+    pub fn _is_oposite(&self, dir: &Direction) -> bool {
         self == &Self::oposite(dir)
     }
 }
@@ -75,6 +75,26 @@ impl RenderBlock for Block {
     }
 }
 
+impl PartialEq for Block {
+    fn eq(&self, other: &Self) -> bool {
+        let b1 = match self {
+            Self::Air(_) => 1,
+            Self::Iron(_) => 2,
+            Self::RedstoneDust(_) => 3,
+            Self::RedstoneBlock(_) => 4,
+            Self::Repeater(_) => 5
+        };
+        let b2 = match other {
+            Self::Air(_) => 1,
+            Self::Iron(_) => 2,
+            Self::RedstoneDust(_) => 3,
+            Self::RedstoneBlock(_) => 4,
+            Self::Repeater(_) => 5
+        };
+        b1 == b2
+    }
+}
+
 impl From<Air> for Block {
     fn from(air: Air) -> Self {
         Self::Air(air)
@@ -108,7 +128,7 @@ impl From<Repeater> for Block {
 
 /* Block Types */
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Air {
 }
 
@@ -119,7 +139,7 @@ impl Air {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Iron {
 }
 
@@ -130,7 +150,7 @@ impl Iron {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct RedstoneDust {
     pub power_level: u8,
 }
@@ -144,7 +164,7 @@ impl RedstoneDust {
 }
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct RedstoneBlock {
 }
 
@@ -155,7 +175,7 @@ impl RedstoneBlock {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Repeater {
     pub facing: Direction,
     pub powered: bool,
