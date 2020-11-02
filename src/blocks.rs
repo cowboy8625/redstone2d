@@ -9,6 +9,22 @@ pub enum Direction {
     East = 1,
 }
 
+impl Direction {
+    pub fn oposite(dir: &Direction) -> Direction {
+        match dir {
+            Self::North => Self::South,
+            Self::South => Self::North,
+            Self::West  => Self::East,
+            Self::East  => Self::West,
+        }
+    }
+
+    pub fn is_oposite(&self, dir: &Direction) -> bool {
+        self == &Self::oposite(dir)
+    }
+}
+
+
 #[derive(Debug, Clone)]
 pub enum Block {
     RedstoneDust(RedstoneDust),
@@ -20,7 +36,7 @@ pub enum Block {
 
 impl Block {
     pub fn rotation(&self) -> f32 {
-        let tau = std::f32::consts::TAU;
+        let _tau = std::f32::consts::TAU;
         match self {
             Self::RedstoneDust(_) => 0.0,
             Self::RedstoneBlock(_) => 0.0,

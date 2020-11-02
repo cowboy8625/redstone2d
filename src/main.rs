@@ -80,15 +80,12 @@ fn clamp<T>(x: T, min: T, max: T) -> T where T: Ord{
 }
 
 fn is_powered(idx: u32, dir: &Direction, world: &World) -> bool {
-    let idx_by = match dir {
-        Direction::North => CW as i32,
-        Direction::South => CW as i32 * -1,
-        Direction::West => 1,
-        Direction::East => -1,
-    };
-    if let Some(block) = world.get(idx as usize + idx_by as usize) {
+    if let Some(block) = world.get(idx as usize + Direction::oposite(&dir) as usize) {
         match block {
             Block::RedstoneBlock(_) => true,
+            // FIXME: problem is in here.   Repeater is getting powered from front instead of back
+            // if repeater is facing North then check South for power
+            Block::Repeater(r) => if dir == &r.facing && r.powered { true } else { false },
             Block::RedstoneDust(r) => if r.power_level > 0 { true } else { false },
             _ => false,
 
