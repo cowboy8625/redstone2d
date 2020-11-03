@@ -7,8 +7,13 @@ use ggez::{
     //graphics::DrawParam,
     event::KeyCode,
     input::mouse::MouseButton,
-    audio::SoundSource,
 };
+
+use ron::ser::{to_string_pretty, PrettyConfig};
+use ron::de::from_reader;
+use serde::{Serialize, Deserialize};
+
+use std::io::prelude::*;
 
 
 const CELL: u32 = 16;
@@ -44,6 +49,41 @@ fn from_idx(idx: usize) -> (u32, u32) {
 
 fn _from_cords(x: u32, y: u32) -> usize {
     (y * CW + x) as usize
+}
+
+fn save_world(world: &World) {
+    let pretty = PrettyConfig::new();
+        //.depth_limit(2)
+        //.separate_tuple_members(true)
+        //.enumerate_arrays(true);
+    let world_data = to_string_pretty(&world, pretty).expect("Serialization failed");
+
+    let mut file = std::fs::OpenOptions::new()
+        .write(true)
+        .create(true)
+        .open("world.ron")
+        .expect("Problem opening the file");
+
+    match file.write(world_data.as_bytes()) {
+        Ok(_) => println!("World Saved"),
+        Err(e) => println!("File did not save with error of: {}", e),
+    }
+
+}
+
+fn load_world() -> World {
+    let file = std::fs::OpenOptions::new()
+        .read(true)
+        .open("world.ron")
+        .expect("Problem opening the file");
+    match from_reader(file) {
+        Ok(world) => world,
+        Err(e) => {
+            println!("Failed to load config: {}", e);
+
+            std::process::exit(1);
+        }
+    }
 }
 
 
@@ -110,12 +150,8 @@ fn power_check(idx: u32, world: &World) -> u8 {
                     }
                 },
                 Block::Repeater(r) => if r.powered {
-                    match (&r.facing, idx_by) {
-                        (Direction::North, Direction::South) |
-                        (Direction::South, Direction::North) |
-                        (Direction::West, Direction::East) |
-                        (Direction::East, Direction::West)  => power = 15,
-                        _ => {},
+                    if r.facing.is_oposite(&idx_by) {
+                        power = 15
                     }
                 },
                 _ => {},
@@ -162,6 +198,7 @@ struct GameState {
     world: Vec<Block>,
     mouse: Mouse,
     assets: Assets,
+    key_buff: Vec<KeyCode>,
 }
 
 impl GameState {
@@ -174,6 +211,7 @@ impl GameState {
             world,
             mouse: Mouse::default(),
             assets,
+            key_buff: Vec::new(),
         })
     }
 }
@@ -190,7 +228,7 @@ impl event::EventHandler for GameState {
                     ) {
                     if *block != self.player.current {
                         *block = self.player.current.clone();
-                        let _ = self.assets.block_sound.play();
+                        self.assets.play_sound();
                     }
                 }
             }
@@ -238,10 +276,27 @@ impl event::EventHandler for GameState {
             KeyCode::C    => self.world = create_world(&Block::from(Air::new())),
             KeyCode::F    => self.world = create_world(&self.player.current),
             KeyCode::W    => self.player.current.update(Direction::North),
-            KeyCode::S    => self.player.current.update(Direction::South),
+            KeyCode::S    => {
+                if let Some(KeyCode::LControl) = self.key_buff.get(0) {
+                    save_world(&self.world);
+                    self.key_buff.clear();
+                } else {
+                    self.player.current.update(Direction::South)
+                }
+            },
             KeyCode::A    => self.player.current.update(Direction::West),
             KeyCode::D    => self.player.current.update(Direction::East),
+            KeyCode::L    => {
+                if let Some(KeyCode::LControl) = self.key_buff.get(0) {
+                    self.world = load_world();
+                    self.key_buff.clear();
+                }
+            },
+            KeyCode::LControl => self.key_buff.push(keycode),
             _ => {},
+        }
+        if self.key_buff.len() > 1 {
+            self.key_buff.clear();
         }
         println!("{:?}", self.player.current);
     }

@@ -1,7 +1,9 @@
 use crate::graphics;
-use crate::{RenderBlock, CELL, CW, from_idx, Assets, Context, GameResult};
+use crate::{
+    RenderBlock, CELL, CW, from_idx, Assets, Context, GameResult, Serialize, Deserialize
+};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Direction {
     North = CW as isize * -1,
     South = CW as isize,
@@ -19,13 +21,13 @@ impl Direction {
         }
     }
 
-    pub fn _is_oposite(&self, dir: &Direction) -> bool {
+    pub fn is_oposite(&self, dir: &Direction) -> bool {
         self == &Self::oposite(dir)
     }
 }
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Block {
     RedstoneDust(RedstoneDust),
     RedstoneBlock(RedstoneBlock),
@@ -77,19 +79,23 @@ impl RenderBlock for Block {
 
 impl PartialEq for Block {
     fn eq(&self, other: &Self) -> bool {
-        let b1 = match self {
-            Self::Air(_) => 1,
+        let b1: u8 = match self {
+            Self::Air(_)  => 1,
             Self::Iron(_) => 2,
-            Self::RedstoneDust(_) => 3,
-            Self::RedstoneBlock(_) => 4,
-            Self::Repeater(_) => 5
+            Self::RedstoneDust(_)  => 3,
+            Self::RedstoneBlock(_) => 8,
+            Self::Repeater(r) => {
+                (5 + r.facing.clone() as isize) as u8
+            }
         };
-        let b2 = match other {
+        let b2: u8 = match other {
             Self::Air(_) => 1,
             Self::Iron(_) => 2,
             Self::RedstoneDust(_) => 3,
-            Self::RedstoneBlock(_) => 4,
-            Self::Repeater(_) => 5
+            Self::RedstoneBlock(_) => 8,
+            Self::Repeater(r) => {
+                (5 + r.facing.clone() as isize) as u8
+            }
         };
         b1 == b2
     }
@@ -128,7 +134,7 @@ impl From<Repeater> for Block {
 
 /* Block Types */
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Air {
 }
 
@@ -139,7 +145,7 @@ impl Air {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Iron {
 }
 
@@ -150,7 +156,7 @@ impl Iron {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RedstoneDust {
     pub power_level: u8,
 }
@@ -164,7 +170,7 @@ impl RedstoneDust {
 }
 
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RedstoneBlock {
 }
 
@@ -175,7 +181,7 @@ impl RedstoneBlock {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Repeater {
     pub facing: Direction,
     pub powered: bool,

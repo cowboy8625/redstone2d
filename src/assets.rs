@@ -1,5 +1,7 @@
+use rand::{Rng, thread_rng};
 use ggez::graphics::Image;
 use ggez::audio;
+use ggez::audio::SoundSource;
 use crate::Context;
 use crate::GameResult;
 use crate::CELL;
@@ -22,7 +24,7 @@ pub struct Assets {
     pub redstone_block: Image,
     repeater: Image,
     repeater_on: Image,
-    pub block_sound: audio::Source,
+    block_sounds: Vec<audio::Source>,
 }
 
 impl Assets {
@@ -34,10 +36,15 @@ impl Assets {
         let repeater = Image::new(ctx, &get_sprite("repeater"))?;
         let repeater_on = Image::new(ctx, &get_sprite("repeater_on"))?;
 
-        let block_sound = audio::Source::new(ctx, &get_sound("stone1"))?;
+        let block_sounds = vec![
+            audio::Source::new(ctx, &get_sound("stone1"))?,
+            audio::Source::new(ctx, &get_sound("stone2"))?,
+            audio::Source::new(ctx, &get_sound("stone3"))?,
+            audio::Source::new(ctx, &get_sound("stone4"))?,
+        ];
         Ok( Self {
             iron, air, redstone_block, redstone_dust, repeater, repeater_on,
-            block_sound,
+            block_sounds,
         })
     }
 
@@ -64,6 +71,13 @@ impl Assets {
             Block::Iron(_) => &self.iron,
             Block::Air(_) => &self.air,
             Block::Repeater(r) => self.repeater(r),
+        }
+    }
+
+    pub fn play_sound(&mut self) {
+        let n: usize = thread_rng().gen_range(0, 4);
+        if let Some(bs) = self.block_sounds.get_mut(n) {
+            let _ = bs.play();
         }
     }
 }
