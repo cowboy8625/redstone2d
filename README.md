@@ -39,3 +39,6 @@ to a schematic file for litematica so you can place your contraption in minecraf
 - [ ] Make Redstone update in one game tick.
 - [ ] Add Repeater tick delay.
 - [ ] Solid Block may be powered.
+- [ ] Camera for Player.
+- [ ] Zoom in and out.
+- [ ] Menus.
