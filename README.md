@@ -8,25 +8,25 @@ you also will need to place `resource` folder in `target/release/` folder and it
 ##### KeyBindings
 
 Select Block:
-    1 = Air
-    2 = Redstone Dust
-    3 = Redstone Block
-    4 = Iron
-    5 = Repeater
+    - 1 = Air
+    - 2 = Redstone Dust
+    - 3 = Redstone Block
+    - 4 = Iron
+    - 5 = Repeater
 
 Change Direction of Block:
-    W = North/Up
-    S = South/Down
-    A = West/Right
-    D = East/Left
+    - W = North/Up
+    - S = South/Down
+    - A = West/Right
+    - D = East/Left
 
 Save & Load:
-    Contol + S = Save World
-    Contol + L = Load World
+    - Contol + S = Save World
+    - Contol + L = Load World
 
 Miscellanies:
-    C = Clear Screen
-    F = Fill Screen with currect block selected
+    - C = Clear Screen
+    - F = Fill Screen with currect block selected
 
 
 ##### Plains
