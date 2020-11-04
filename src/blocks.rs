@@ -70,6 +70,7 @@ impl RenderBlock for Block {
         let drawparams = graphics::DrawParam::new()
             .rotation(self.rotation())
             .offset([0.5, 0.5])
+            //.scale([2.0, 2.0])
             .dest([((x * CELL) + CELL / 2) as f32, ((y * CELL) + CELL / 2) as f32]);
 
         graphics::draw(ctx, image, drawparams)?;

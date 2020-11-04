@@ -1,3 +1,4 @@
+// #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod blocks;
 mod assets;
 use blocks::{Direction, Block, RedstoneDust, RedstoneBlock, Repeater, Iron, Air};
@@ -14,6 +15,8 @@ use ron::de::from_reader;
 use serde::{Serialize, Deserialize};
 
 use std::io::prelude::*;
+
+use ezquadtree::QuadTree;
 
 
 const CELL: u32 = 16;
@@ -116,16 +119,25 @@ impl Default for Mouse {
 }
 
 
-fn clamp<T>(x: T, min: T, max: T) -> T where T: Ord{
+fn clamp<T>(x: T, min: T, max: T) -> T where T: Ord {
     std::cmp::max(min, std::cmp::min(x, max))
+}
+
+fn get_four_sides(idx: usize, world: &World) -> Vec<(Direction, &Block)> {
+    use Direction::*;
+    let mut blocks = Vec::new();
+    for side in vec![North, South, East, West] {
+        if let Some(b) = world.get(idx + side.clone() as usize) {
+            blocks.push((side, b));
+        }
+    }
+    blocks
 }
 
 fn is_powered(idx: u32, dir: &Direction, world: &World) -> bool {
     if let Some(block) = world.get(idx as usize + Direction::oposite(&dir) as usize) {
         match block {
             Block::RedstoneBlock(_) => true,
-            // FIXME: problem is in here.   Repeater is getting powered from front instead of back
-            // if repeater is facing North then check South for power
             Block::Repeater(r) => if dir == &r.facing && r.powered { true } else { false },
             Block::RedstoneDust(r) => if r.power_level > 0 { true } else { false },
             _ => false,
@@ -136,53 +148,52 @@ fn is_powered(idx: u32, dir: &Direction, world: &World) -> bool {
     }
 }
 
-fn power_check(idx: u32, world: &World) -> u8 {
-    use Direction::*;
-    let mut power = 0;
-    let idx = idx as i32;
-    for idx_by in vec![North, South, East, West] {
-        if let Some(block) = world.get(idx as usize + idx_by.clone() as usize) {
-            match block {
-                Block::RedstoneBlock(_) => power = 15,
-                Block::RedstoneDust(b) => {
-                    if b.power_level > 0 {
-                        power = std::cmp::max(power, clamp(b.power_level - 1, MIN_SIGNAL, MAX_SIGNAL));
-                    }
-                },
-                Block::Repeater(r) => if r.powered {
-                    if r.facing.is_oposite(&idx_by) {
-                        power = 15
-                    }
-                },
-                _ => {},
-            }
+fn update_power_level(idx: usize, world: &World, wire: &mut RedstoneDust) {
+    for (bside, block) in get_four_sides(idx, world) {
+        match block {
+            Block::RedstoneBlock(_) => wire.power_level = 15,
+            Block::RedstoneDust(b) => {
+                if b.power_level > 0 {
+                    wire.power_level = std::cmp::max(wire.power_level, clamp(b.power_level - 1, MIN_SIGNAL, MAX_SIGNAL));
+                }
+            },
+            Block::Repeater(r) => if r.powered {
+                if r.facing.is_oposite(&bside) {
+                    wire.power_level = 15
+                }
+            },
+            _ => {},
         }
-    }
-    power
+       }
 }
 
 fn advance_world(world: &World) -> World {
-    let mut new_world = Vec::new();
+    let mut new_world = create_world(&Block::from(Air::new()));
+    //dbg!(&new_world.len());
     for idx in 0..CW * CH {
         if let Some(block) = world.get(idx as usize) {
             // Do some Logic
             match block {
                 Block::Air(_) | Block::Iron(_) | Block::RedstoneBlock(_) => {
-                    new_world.push(block.clone());
+                    let _ = new_world.remove(idx as usize);
+                    new_world.insert(idx as usize, block.clone());
                 },
                 Block::RedstoneDust(_) => {
                     let mut new_block = RedstoneDust::new();
-                    new_block.power_level = power_check(idx, &world);
-                    new_world.push(Block::from(new_block));
+                    update_power_level(idx as usize, &world, &mut new_block);
+                    let _ = new_world.remove(idx as usize);
+                    new_world.insert(idx as usize, Block::from(new_block));
                 },
                 Block::Repeater(r) => {
                     let mut new_block = Repeater::new(r.facing.clone());
                     new_block.powered = is_powered(idx, &r.facing, &world);
-                    new_world.push(Block::from(new_block));
+                    let _ = new_world.remove(idx as usize);
+                    new_world.insert(idx as usize, Block::from(new_block));
                 },
             }
         }
     }
+    // dbg!(&new_world.len());
     new_world
 }
 
