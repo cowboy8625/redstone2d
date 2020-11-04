@@ -1,7 +1,9 @@
 use crate::graphics;
 use crate::{
-    RenderBlock, CELL, CW, from_idx, Assets, Context, GameResult, Serialize, Deserialize
+    RenderBlock, CELL, CW, from_idx, Assets, Context, GameResult, Serialize, Deserialize,
 };
+
+use ezquadtree::Vector;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Direction {
@@ -78,6 +80,18 @@ impl RenderBlock for Block {
     }
 }
 
+impl Vector for Block {
+    fn point(&self) -> (u32, u32) {
+        match self {
+            Self::Air(_)  => (0, 0),
+            Self::Iron(b) => (b.x, b.y),
+            Self::RedstoneDust(b)  => (b.x, b.y),
+            Self::RedstoneBlock(b) => (b.x, b.y),
+            Self::Repeater(b) => (b.x, b.y),
+        }
+    }
+}
+
 impl PartialEq for Block {
     fn eq(&self, other: &Self) -> bool {
         let b1: u8 = match self {
@@ -136,8 +150,7 @@ impl From<Repeater> for Block {
 /* Block Types */
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct Air {
-}
+pub struct Air;
 
 impl Air {
     pub fn new() -> Self {
@@ -148,51 +161,52 @@ impl Air {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Iron {
+    pub x: u32,
+    pub y: u32,
 }
 
 impl Iron {
-    pub fn new() -> Self {
-        Self {
-        }
+    pub fn new(x: u32, y: u32) -> Self {
+        Self { x, y }
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RedstoneDust {
+    pub x: u32,
+    pub y: u32,
     pub power_level: u8,
 }
 
 impl RedstoneDust {
-    pub fn new() -> Self {
-        Self {
-            power_level: 0
-        }
+    pub fn new(x: u32, y: u32) -> Self {
+        Self { x, y, power_level: 0 }
     }
 }
 
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RedstoneBlock {
+    pub x: u32,
+    pub y: u32,
 }
 
 impl RedstoneBlock {
-    pub fn new() -> Self {
-        Self {
-        }
+    pub fn new(x: u32, y: u32) -> Self {
+        Self { x, y }
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Repeater {
+    pub x: u32,
+    pub y: u32,
     pub facing: Direction,
     pub powered: bool,
 }
 
 impl Repeater {
-    pub fn new(facing: Direction) -> Self {
-        Self {
-            facing,
-            powered: false,
-        }
+    pub fn new(x: u32, y: u32, facing: Direction) -> Self {
+        Self { x, y, facing, powered: false, }
     }
 }

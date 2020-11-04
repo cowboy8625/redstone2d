@@ -16,7 +16,7 @@ use serde::{Serialize, Deserialize};
 
 use std::io::prelude::*;
 
-use ezquadtree::QuadTree;
+use ezquadtree as qt;
 
 
 const CELL: u32 = 16;
@@ -30,8 +30,6 @@ const SCREEN_SIZE: (f32, f32) = (
 // Redstone signal
 const MAX_SIGNAL: u8 = 15;
 const MIN_SIGNAL: u8 = 0;
-
-type World = Vec<Block>;
 
 fn _display_fps(ctx: &mut Context) -> GameResult {
     let text = graphics::Text::new(graphics::TextFragment::new(format!(
@@ -54,7 +52,7 @@ fn _from_cords(x: u32, y: u32) -> usize {
     (y * CW + x) as usize
 }
 
-fn save_world(world: &World) {
+fn save_world(world: &qt::QuadTree<Block>) {
     let pretty = PrettyConfig::new();
         //.depth_limit(2)
         //.separate_tuple_members(true)
@@ -74,7 +72,7 @@ fn save_world(world: &World) {
 
 }
 
-fn load_world() -> World {
+fn load_world() -> qt::QuadTree<Block> {
     let file = std::fs::OpenOptions::new()
         .read(true)
         .open("world.ron")
@@ -118,12 +116,11 @@ impl Default for Mouse {
     }
 }
 
-
 fn clamp<T>(x: T, min: T, max: T) -> T where T: Ord {
     std::cmp::max(min, std::cmp::min(x, max))
 }
 
-fn get_four_sides(idx: usize, world: &World) -> Vec<(Direction, &Block)> {
+fn get_four_sides(idx: usize, world: &qt::QuadTree<Block>) -> Vec<(Direction, &Block)> {
     use Direction::*;
     let mut blocks = Vec::new();
     for side in vec![North, South, East, West] {
@@ -134,7 +131,7 @@ fn get_four_sides(idx: usize, world: &World) -> Vec<(Direction, &Block)> {
     blocks
 }
 
-fn is_powered(idx: u32, dir: &Direction, world: &World) -> bool {
+fn is_powered(idx: u32, dir: &Direction, world: &qt::QuadTree<Block>) -> bool {
     if let Some(block) = world.get(idx as usize + Direction::oposite(&dir) as usize) {
         match block {
             Block::RedstoneBlock(_) => true,
@@ -148,7 +145,7 @@ fn is_powered(idx: u32, dir: &Direction, world: &World) -> bool {
     }
 }
 
-fn update_power_level(idx: usize, world: &World, wire: &mut RedstoneDust) {
+fn update_power_level(idx: usize, world: &qt::QuadTree<Block>, wire: &mut RedstoneDust) {
     for (bside, block) in get_four_sides(idx, world) {
         match block {
             Block::RedstoneBlock(_) => wire.power_level = 15,
@@ -167,7 +164,7 @@ fn update_power_level(idx: usize, world: &World, wire: &mut RedstoneDust) {
        }
 }
 
-fn advance_world(world: &World) -> World {
+fn advance_world(world: &qt::QuadTree<Block>) -> qt::QuadTree<Block> {
     let mut new_world = create_world(&Block::from(Air::new()));
     //dbg!(&new_world.len());
     for idx in 0..CW * CH {
@@ -197,16 +194,15 @@ fn advance_world(world: &World) -> World {
     new_world
 }
 
-fn create_world(block: &Block) -> World {
-    let mut world = Vec::new();
-    (0..CW * CH).for_each(|_| world.push(block.clone()));
-    world
+fn create_world(block: &Block) -> qt::QuadTree<Block> {
+    let bb = qt::Rectangle::new(0, 0, CW, CH);
+    qt::QuadTree::<Block>::new(bb, 4);
 }
 
 
 struct GameState {
     player: Player,
-    world: Vec<Block>,
+    world: qt::QuadTree<Block>,
     mouse: Mouse,
     assets: Assets,
     key_buff: Vec<KeyCode>,
@@ -280,10 +276,10 @@ impl event::EventHandler for GameState {
     ) {
         match keycode {
             KeyCode::Key1 => self.player.current = Block::from(Air::new()),
-            KeyCode::Key2 => self.player.current = Block::from(RedstoneDust::new()),
-            KeyCode::Key3 => self.player.current = Block::from(RedstoneBlock::new()),
-            KeyCode::Key4 => self.player.current = Block::from(Iron::new()),
-            KeyCode::Key5 => self.player.current = Block::from(Repeater::new(self.player.facing.clone())),
+            KeyCode::Key2 => self.player.current = Block::from(RedstoneDust::new(self.mouse.x as u32, self.mouse.y as u32)),
+            KeyCode::Key3 => self.player.current = Block::from(RedstoneBlock::new(self.mouse.x as u32, self.mouse.y as u32)),
+            KeyCode::Key4 => self.player.current = Block::from(Iron::new(self.mouse.x as u32, self.mouse.y as u32)),
+            KeyCode::Key5 => self.player.current = Block::from(Repeater::new(self.mouse.x as u32, self.mouse.y as u32, self.player.facing.clone())),
             KeyCode::C    => self.world = create_world(&Block::from(Air::new())),
             KeyCode::F    => self.world = create_world(&self.player.current),
             KeyCode::W    => self.player.current.update(Direction::North),
